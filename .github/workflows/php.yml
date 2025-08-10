@@ -58,6 +58,7 @@ jobs:
           PHAR_NAME: ${{ env.PHAR_TARGET_BASENAME }}
         run: |
           set -euo pipefail
+
           if [ -z "${VERSION:-}" ]; then
             echo "VERSION is empty — cannot continue"
             exit 1
@@ -67,38 +68,24 @@ jobs:
           OUT_PATH="$OUT_DIR/$PHAR_NAME"
 
           mkdir -p "$OUT_DIR"
-          echo "Building PHAR at $OUT_PATH"
-
-          # Remove old phar if exists
           rm -f "$OUT_PATH"
 
-          # Use php's Phar to pack src/, vendor/ and common root files
-          php -d phar.readonly=0 - <<'PHP'
-          $out = getenv('OUT_PATH') ?: null;
-          if (!$out) {
-              // read from env passed via heredoc as fallback
-              $out = "${OUT_DIR}/${PHAR_NAME}";
-          }
-          // But the above won't work inside this heredoc; so we use getenv properly
-          $out = getenv('OUT_PATH');
-          if (!$out) {
-              fwrite(STDERR, "OUT_PATH env var missing\n");
-              exit(1);
-          }
+          # Create a temporary PHP build script (avoids YAML/heredoc nesting issues)
+          cat > build-phar.php <<'PHP'
+          <?php
+          $out = $argv[1] ?? null;
+          if (!$out) { fwrite(STDERR, "No output path provided\n"); exit(1); }
 
-          // Clean any existing file
           if (file_exists($out)) unlink($out);
 
           $phar = new Phar($out, 0, basename($out));
           $phar->startBuffering();
 
-          // directories to add (adjust if you want different content)
           $dirs = ['src', 'vendor'];
           foreach ($dirs as $d) {
               if (is_dir($d)) {
                   $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, RecursiveDirectoryIterator::SKIP_DOTS));
                   foreach ($it as $file) {
-                      /** @var SplFileInfo $file */
                       $filePath = $file->getRealPath();
                       $local = ltrim(str_replace(getcwd(), '', $filePath), '/');
                       $phar->addFile($filePath, $local);
@@ -106,34 +93,32 @@ jobs:
               }
           }
 
-          // add a few root files if present
           foreach (['composer.json','README.md','LICENSE'] as $f) {
-              if (file_exists($f)) {
-                  $phar->addFile($f, $f);
-              }
+              if (file_exists($f)) $phar->addFile($f, $f);
           }
 
-          // create a simple stub so the PHAR can be required/used
           $stub = <<<'STUB'
-#!/usr/bin/env php
-<?php
-Phar::mapPhar();
-if (file_exists('phar://' . __FILE__ . '/vendor/autoload.php')) {
-    require 'phar://' . __FILE__ . '/vendor/autoload.php';
-}
-__HALT_COMPILER();
-STUB;
+          #!/usr/bin/env php
+          <?php
+          Phar::mapPhar();
+          if (file_exists('phar://' . __FILE__ . '/vendor/autoload.php')) {
+              require 'phar://' . __FILE__ . '/vendor/autoload.php';
+          }
+          __HALT_COMPILER();
+          STUB;
+
           $phar->setStub($stub);
           $phar->stopBuffering();
           echo "PHAR created at $out\n";
           PHP
-        env:
-          OUT_PATH: ${{ github.workspace }}/v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}
+
+          # Run the PHP builder with the target path
+          php -d phar.readonly=0 build-phar.php "$OUT_PATH"
 
       - name: Verify PHAR exists
         run: |
-          ls -l "v/${{ env.VERSION }}/$PHAR_TARGET_BASENAME"
-          file "v/${{ env.VERSION }}/$PHAR_TARGET_BASENAME" || true
+          ls -l "v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}"
+          file "v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}" || true
 
       - name: Upload PHAR to the Release
         uses: actions/upload-release-asset@v1
