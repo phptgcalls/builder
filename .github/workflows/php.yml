@@ -79,15 +79,7 @@ jobs:
 
           $phar->buildFromDirectory('vendor');
 
-          $stub = <<<'STUB'
-          #!/usr/bin/env php
-          <?php
-          Phar::mapPhar();
-          if(file_exists('phar://' . __FILE__ . '/vendor/autoload.php')){
-              require 'phar://' . __FILE__ . '/vendor/autoload.php';
-          }
-          __HALT_COMPILER();
-          STUB;
+          $stub = $phar->createDefaultStub('autoload.php')
 
           $phar->setStub($stub);
 
