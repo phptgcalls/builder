@@ -24,7 +24,7 @@ jobs:
         uses: shivammathur/setup-php@2.32.0
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, xml, gmp
+          extensions: mbstring, gmp
           coverage: none
 
       - name: Cache Composer packages
@@ -40,7 +40,7 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Set VERSION (strip leading v if present)
-        id: set_version
+        id: set-version
         run: |
           TAG='${{ github.event.release.tag_name }}'
           VERSION="${TAG#v}"
@@ -49,7 +49,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build PHAR into v/<version>/liveptoto.phar
+      - name: Build PHAR
         env:
           VERSION: ${{ env.VERSION }}
           PHAR_NAME: ${{ env.PHAR_TARGET_BASENAME }}
@@ -67,49 +67,34 @@ jobs:
           mkdir -p "$OUT_DIR"
           rm -f "$OUT_PATH"
 
-          # Create a temporary PHP build script (avoids YAML/heredoc nesting issues)
           cat > build-phar.php <<'PHP'
           <?php
-          $out = $argv[1] ?? null;
-          if (!$out) { fwrite(STDERR, "No output path provided\n"); exit(1); }
+          $out = $argv[true];
 
-          if (file_exists($out)) unlink($out);
+          if(file_exists($out)) unlink($out);
 
-          $phar = new Phar($out, 0, basename($out));
+          $phar = new Phar($out);
+
           $phar->startBuffering();
 
-          $dirs = ['src', 'vendor'];
-          foreach ($dirs as $d) {
-              if (is_dir($d)) {
-                  $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, RecursiveDirectoryIterator::SKIP_DOTS));
-                  foreach ($it as $file) {
-                      $filePath = $file->getRealPath();
-                      $local = ltrim(str_replace(getcwd(), '', $filePath), '/');
-                      $phar->addFile($filePath, $local);
-                  }
-              }
-          }
-
-          foreach (['composer.json','README.md','LICENSE'] as $f) {
-              if (file_exists($f)) $phar->addFile($f, $f);
-          }
+          $p->buildFromDirectory('vendor');
 
           $stub = <<<'STUB'
           #!/usr/bin/env php
           <?php
           Phar::mapPhar();
-          if (file_exists('phar://' . __FILE__ . '/vendor/autoload.php')) {
+          if(file_exists('phar://' . __FILE__ . '/vendor/autoload.php')){
               require 'phar://' . __FILE__ . '/vendor/autoload.php';
           }
           __HALT_COMPILER();
           STUB;
 
           $phar->setStub($stub);
+
           $phar->stopBuffering();
+
           echo "PHAR created at $out\n";
           PHP
-
-          # Run the PHP builder with the target path
           php -d phar.readonly=0 build-phar.php "$OUT_PATH"
 
       - name: Verify PHAR exists
@@ -124,5 +109,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}
-          asset_name: v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}
+          asset_name: ${{ env.PHAR_TARGET_BASENAME }}
           asset_content_type: application/octet-stream
