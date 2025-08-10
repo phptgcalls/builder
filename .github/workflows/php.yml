@@ -79,7 +79,7 @@ jobs:
 
           $phar->buildFromDirectory('vendor');
 
-          $stub = $phar->createDefaultStub('autoload.php')
+          $stub = $phar->createDefaultStub('autoload.php');
 
           $phar->setStub($stub);
 
