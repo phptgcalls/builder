@@ -77,7 +77,7 @@ jobs:
 
           $phar->startBuffering();
 
-          $p->buildFromDirectory('vendor');
+          $phar->buildFromDirectory('vendor');
 
           $stub = <<<'STUB'
           #!/usr/bin/env php
