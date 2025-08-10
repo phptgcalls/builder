@@ -1,0 +1,10 @@
+{
+    "require": {
+        "taknone/liveproto": "0.0.3"
+    },
+    "config": {
+        "allow-plugins": {
+            "taknone/bootstrapper": true
+        }
+    }
+}
