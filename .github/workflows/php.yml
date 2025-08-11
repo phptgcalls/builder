@@ -20,7 +20,7 @@ jobs:
 
     env:
       PHP_VERSION: '8.3'
-      PHAR_TARGET_BASENAME: liveptoto.phar
+      PHAR_TARGET_BASENAME: liveproto.phar
 
     steps:
       - name: Checkout repository
