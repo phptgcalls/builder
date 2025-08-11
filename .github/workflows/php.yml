@@ -3,6 +3,12 @@ name: Build PHAR and upload to release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to use ( example : v1.2.3 ) If empty, workflow will try to detect tag from event'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -39,13 +45,46 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Set VERSION (strip leading v if present)
+      - name: Resolve TAG and FILE variables
+        id: resolve
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+        run: |
+          echo "Event: $GITHUB_EVENT_NAME"
+          # 1) If input.tag provided on manual run, prefer that
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+            source="workflow_dispatch input"
+          # 2) If this was a release event, use the release tag
+          elif [ "$GITHUB_EVENT_NAME" = "release" ] && [ -n "$GITHUB_RELEASE_TAG" ]; then
+            TAG="$GITHUB_RELEASE_TAG"
+            source="release event"
+          # 3) If this was a tag push, extract tag from GITHUB_REF (refs/tags/...)
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            source="push tag"
+          else
+            TAG=""
+            source="none"
+          fi
+
+          echo "Resolved TAG=$TAG (from $source)"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Fail if no tag resolved
+        if: ${{ env.TAG == '' }}
+        run: |
+          echo "No tag could be determined automatically, Provide a tag with workflow_dispatch input 'tag' or trigger via a release / tag push"
+          exit 1
+
+      - name: Set VERSION
         id: set-version
         run: |
-          TAG='${{ github.event.release.tag_name }}'
-          VERSION="${TAG#v}"
+          VERSION="${env.TAG#v}"
           VERSION="${VERSION#V}"
-          echo "Tag from event: $TAG"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
