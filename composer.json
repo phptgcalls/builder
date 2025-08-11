@@ -1,0 +1,45 @@
+{
+    "name": "taknone/liveproto",
+    "license": "MIT",
+    "description": "An async , pure PHP MTProto Telegram client",
+    "type": "library",
+    "keywords": [
+        "telegram",
+        "client",
+        "api",
+        "php",
+        "liveproto",
+        "telegram-client",
+        "mtproto",
+        "async"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Tak\\Liveproto\\": "src"
+        },
+        "files": [
+            "src/loader.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Tak None",
+            "email": "MrTakNone@gmail.com"
+        }
+    ],
+    "minimum-stability": "beta",
+    "require": {
+        "php": ">=8.2",
+        "ext-gmp": "*",
+        "amphp/amp": "^3.1.0",
+        "amphp/http-client": "^5.3.3",
+        "amphp/websocket-client": "^2.0.1",
+        "amphp/http": "^2.1.2",
+        "amphp/socket": "^2.3.1",
+        "amphp/file": "^3.2.0",
+        "amphp/mysql": "^3",
+        "league/uri": "^7.5.1",
+        "phpseclib/phpseclib": "^3.0.46",
+        "taknone/bootstrapper": "1.0.0"
+    }
+}
