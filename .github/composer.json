@@ -1,6 +1,6 @@
 {
     "require": {
-        "taknone/liveproto": "0.0.3"
+        "taknone/liveproto": "*"
     },
     "config": {
         "allow-plugins": {
