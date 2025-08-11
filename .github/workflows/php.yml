@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Resolve TAG and FILE variables
+      - name: Resolve TAG
         id: resolve
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
@@ -62,28 +62,23 @@ jobs:
           elif [ "$GITHUB_EVENT_NAME" = "release" ] && [ -n "$GITHUB_RELEASE_TAG" ]; then
             TAG="$GITHUB_RELEASE_TAG"
             source="release event"
-          # 3) If this was a tag push, extract tag from GITHUB_REF (refs/tags/...)
+          # 3) If this was a tag push, extract tag from GITHUB_REF ( refs/tags/... )
           elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
             source="push tag"
           else
-            TAG=""
-            source="none"
+            echo "No tag could be determined automatically, Provide a tag with workflow_dispatch input 'tag' or trigger via a release / tag push"
+            exit 1
           fi
 
           echo "Resolved TAG=$TAG (from $source)"
-          echo "TAG=$TAG" >> $GITHUB_ENV
-
-      - name: Fail if no tag resolved
-        if: ${{ env.TAG == '' }}
-        run: |
-          echo "No tag could be determined automatically, Provide a tag with workflow_dispatch input 'tag' or trigger via a release / tag push"
-          exit 1
+          echo "TAG=$TAG" >> $GITHUB_ENV    
 
       - name: Set VERSION
         id: set-version
         run: |
-          VERSION="${env.TAG#v}"
+          TAG='${{ env.TAG }}'
+          VERSION="${TAG#v}"
           VERSION="${VERSION#V}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
