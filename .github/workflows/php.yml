@@ -33,15 +33,6 @@ jobs:
           extensions: mbstring, gmp
           coverage: none
 
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --working-dir=.github
 
@@ -105,8 +96,6 @@ jobs:
           <?php
           $out = $argv[true];
 
-          if(file_exists($out)) unlink($out);
-
           $phar = new Phar($out);
 
           $phar->startBuffering();
@@ -129,7 +118,9 @@ jobs:
           file "v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}" || true
 
       - name: Upload PHAR to the Release
-        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: ${{ env.TAG }}
           files: v/${{ env.VERSION }}/${{ env.PHAR_TARGET_BASENAME }}
