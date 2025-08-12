@@ -100,7 +100,7 @@ jobs:
 
           $phar->startBuffering();
 
-          $phar->buildFromDirectory('vendor');
+          $phar->buildFromDirectory('.github/vendor');
 
           $stub = $phar->createDefaultStub('autoload.php');
 
