@@ -1,61 +1,13 @@
 #!/usr/bin/env bash
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-LOG(){
-printf "\n=> %s\n" "$*";
-}
-
-ERR(){
-printf "\n[ERROR] %s\n" "$*" >&2;
-}
-
-
-
-
-
-
-
-
-
-
-
-
+LOG(){ printf "\n=> %s\n" "$*"; }
+ERR(){ printf "\n[ERROR] %s\n" "$*" >&2; }
 
 # prefer sudo when not root
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
   if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; else
-    ERR "Not root and sudo not found — some install steps may fail."
+    ERR "Not root and sudo not found â€” some install steps may fail."
   fi
 fi
 
@@ -207,5 +159,3 @@ fi
 
 LOG "Done."
 exit 0
-
-
