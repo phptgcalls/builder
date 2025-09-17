@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# install-liveproto.sh - simple one-shot installer for PHP 8.4+ + extensions + Composer
-# Then installs taknone/liveproto into ~/liveproto-demo via Composer.
-# Usage: chmod +x install-liveproto.sh && ./install-liveproto.sh
-set -euo pipefail
+
 export DEBIAN_FRONTEND=noninteractive
 
 LOG() { printf "\n=> %s\n" "$*"; }
@@ -199,4 +196,5 @@ else
 fi
 
 LOG "Done. If anything failed, re-run the script as root or consult the error messages shown above."
+
 exit 0
