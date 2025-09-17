@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
-LOG(){ printf "\n=> %s\n" "$*"; }
-ERR(){ printf "\n[ERROR] %s\n" "$*" >&2; }
+
+LOG(){
+printf "\n=> %s\n" "$*";
+}
+
+ERR(){
+printf "\n[ERROR] %s\n" "$*" >&2;
+}
 
 # prefer sudo when not root
 SUDO=""
@@ -159,3 +165,4 @@ fi
 
 LOG "Done."
 exit 0
+
